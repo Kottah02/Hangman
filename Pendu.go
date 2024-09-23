@@ -12,8 +12,75 @@ import (
 
 const maxAttempts = 6
 
+var hangmanStages = []string{
+	`
+  +---+
+  |   |
+      |
+      |
+      |
+      |
+=========
+`,
+	`
+  +---+
+  |   |
+  O   |
+      |
+      |
+      |
+=========
+`,
+	`
+  +---+
+  |   |
+  O   |
+  |   |
+      |
+      |
+=========
+`,
+	`
+  +---+
+  |   |
+  O   |
+ /|   |
+      |
+      |
+=========
+`,
+	`
+  +---+
+  |   |
+  O   |
+ /|\  |
+      |
+      |
+=========
+`,
+	`
+  +---+
+  |   |
+  O   |
+ /|\  |
+ /    |
+      |
+=========
+`,
+	`
+  +---+
+  |   |
+  O   |
+ /|\  |
+ / \  |
+      |
+=========
+`,
+}
+
 func main() {
-	fmt.Println("=====Bienvenue dans le jeu du pendu!=====")
+	fmt.Println(" =====Bienvenue dans le jeu du pendu!===== ")
+	fmt.Println("Devinez le mot avant que l'homme ne soit pendu!")
 
 	err := startGame()
 	if err != nil {
@@ -49,7 +116,8 @@ func startGame() error {
 		if strings.ContainsRune(word, guess) {
 			updateDiscovered(discovered, word, guess)
 			if strings.Join(stringSlice(discovered), "") == word {
-				fmt.Println("Félicitations, vous avez deviné le mot:", word)
+				fmt.Println("---------------------------------------------")
+				fmt.Println("! Félicitations, vous avez deviné le mot:", word)
 				return nil
 			}
 		} else {
@@ -57,6 +125,7 @@ func startGame() error {
 		}
 	}
 
+	printGameState(discovered, usedLetters, attempts)
 	fmt.Println("Vous avez perdu! Le mot était:", word)
 	return nil
 }
@@ -70,7 +139,8 @@ func updateDiscovered(discovered []rune, word string, guess rune) {
 }
 
 func printGameState(discovered []rune, usedLetters map[rune]bool, attempts int) {
-	fmt.Printf("\nMot: %s\n", strings.Join(stringSlice(discovered), " "))
+	fmt.Println(hangmanStages[attempts]) // Affiche l'art ASCII correspondant au nombre d'essais
+	fmt.Printf("Mot: %s\n", strings.Join(stringSlice(discovered), " "))
 	fmt.Printf("Lettres utilisées: %s\n", strings.Join(mapKeysToSlice(usedLetters), " "))
 	fmt.Printf("Essais restants: %d\n", maxAttempts-attempts)
 }
@@ -86,6 +156,7 @@ func getUserGuess() rune {
 	}
 	return rune(input[0])
 }
+
 func mapKeysToSlice(m map[rune]bool) []string {
 	var keys []string
 	for k := range m {
