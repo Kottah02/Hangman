@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const maxAttempts = 6
+const maxAttempts = 7
 
 var hangmanStages = []string{
 	`
@@ -94,12 +94,21 @@ func startGame() error {
 		return err
 	}
 
+	// Initialize the discovered slice with underscores
 	discovered := make([]rune, len(word))
 	for i := range discovered {
 		discovered[i] = '_'
 	}
 
+	// Select a random position and reveal that letter
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(word))
+	discovered[randomIndex] = rune(word[randomIndex])
+
 	usedLetters := map[rune]bool{}
+	// Mark the revealed letter as already used
+	usedLetters[rune(word[randomIndex])] = true
+
 	attempts := 0
 
 	for attempts < maxAttempts {
