@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const maxAttempts = 7
@@ -82,14 +83,21 @@ func main() {
 	fmt.Println(" =====Bienvenue dans le jeu du pendu!===== ")
 	fmt.Println("Devinez le mot avant que l'homme ne soit pendu!")
 
-	err := startGame()
+	// Afficher le menu de difficulté
+	difficulty, err := chooseDifficulty()
+	if err != nil {
+		fmt.Println("Erreur:", err)
+		return
+	}
+
+	err = startGame(difficulty)
 	if err != nil {
 		fmt.Println("Erreur:", err)
 	}
 }
 
-func startGame() error {
-	word, err := getRandomWord()
+func startGame(difficulty string) error {
+	word, err := getRandomWord(difficulty)
 	if err != nil {
 		return err
 	}
@@ -148,7 +156,11 @@ func updateDiscovered(discovered []rune, word string, guess rune) {
 }
 
 func printGameState(discovered []rune, usedLetters map[rune]bool, attempts int) {
-	fmt.Println(hangmanStages[attempts]) // Affiche l'art ASCII correspondant au nombre d'essais
+	index := attempts
+	if index >= len(hangmanStages) {
+		index = len(hangmanStages) - 1
+	}
+	fmt.Println(hangmanStages[index]) // Affiche l'art ASCII correspondant au nombre d'essais
 	fmt.Printf("Mot: %s\n", strings.Join(stringSlice(discovered), " "))
 	fmt.Printf("Lettres utilisées: %s\n", strings.Join(mapKeysToSlice(usedLetters), " "))
 	fmt.Printf("Essais restants: %d\n", maxAttempts-attempts)
@@ -156,14 +168,18 @@ func printGameState(discovered []rune, usedLetters map[rune]bool, attempts int) 
 
 func getUserGuess() rune {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Entrez une lettre: ")
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-	if len(input) != 1 {
-		fmt.Println("Veuillez entrer une seule lettre.")
-		return getUserGuess()
+	for {
+		fmt.Print("Entrez une lettre: ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		// Vérifiez que la longueur est 1 et que le caractère est une lettre
+		if len(input) != 1 || !unicode.IsLetter(rune(input[0])) {
+			fmt.Println("Veuillez entrer une seule lettre valide.")
+		} else {
+			return rune(input[0])
+		}
 	}
-	return rune(input[0])
 }
 
 func mapKeysToSlice(m map[rune]bool) []string {
@@ -182,8 +198,44 @@ func stringSlice(runes []rune) []string {
 	return result
 }
 
-func getRandomWord() (string, error) {
-	file, err := os.Open("words.txt")
+// Fonction pour afficher le menu et choisir la difficulté
+func chooseDifficulty() (string, error) {
+	fmt.Println("Choisissez la difficulté du jeu:")
+	fmt.Println("1. Facile")
+	fmt.Println("2. Moyen")
+	fmt.Println("3. Difficile")
+
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	switch input {
+	case "1":
+		return "facile", nil
+	case "2":
+		return "moyen", nil
+	case "3":
+		return "difficile", nil
+	default:
+		return "", errors.New("choix invalide")
+	}
+}
+
+// Fonction pour obtenir un mot aléatoire selon la difficulté
+func getRandomWord(difficulty string) (string, error) {
+	var filename string
+	switch difficulty {
+	case "facile":
+		filename = "words_facile.txt"
+	case "moyen":
+		filename = "words_moyen.txt"
+	case "difficile":
+		filename = "words_difficile.txt"
+	default:
+		return "", errors.New("difficulté inconnue")
+	}
+
+	file, err := os.Open(filename)
 	if err != nil {
 		return "", errors.New("impossible d'ouvrir le fichier des mots")
 	}
