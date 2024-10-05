@@ -123,22 +123,37 @@ func startGame(difficulty string) error {
 		printGameState(discovered, usedLetters, attempts)
 
 		guess := getUserGuess()
-		if usedLetters[guess] {
-			fmt.Println("Vous avez déjà utilisé cette lettre.")
-			continue
-		}
 
-		usedLetters[guess] = true
-
-		if strings.ContainsRune(word, guess) {
-			updateDiscovered(discovered, word, guess)
-			if strings.Join(stringSlice(discovered), "") == word {
+		// Vérifier si l'utilisateur devine le mot entier
+		if len(guess) > 1 {
+			if guess == word {
 				fmt.Println("---------------------------------------------")
 				fmt.Println("! Félicitations, vous avez deviné le mot:", word)
 				return nil
+			} else {
+				fmt.Println("Mauvaise supposition! Vous perdez 2 tentatives.")
+				attempts += 2
 			}
 		} else {
-			attempts++
+			// Si c'est une seule lettre
+			runeGuess := rune(guess[0])
+			if usedLetters[runeGuess] {
+				fmt.Println("Vous avez déjà utilisé cette lettre.")
+				continue
+			}
+
+			usedLetters[runeGuess] = true
+
+			if strings.ContainsRune(word, runeGuess) {
+				updateDiscovered(discovered, word, runeGuess)
+				if strings.Join(stringSlice(discovered), "") == word {
+					fmt.Println("---------------------------------------------")
+					fmt.Println("! Félicitations, vous avez deviné le mot:", word)
+					return nil
+				}
+			} else {
+				attempts++
+			}
 		}
 	}
 
@@ -166,19 +181,24 @@ func printGameState(discovered []rune, usedLetters map[rune]bool, attempts int) 
 	fmt.Printf("Essais restants: %d\n", maxAttempts-attempts)
 }
 
-func getUserGuess() rune {
+func getUserGuess() string {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("Entrez une lettre: ")
+		fmt.Print("Entrez une lettre ou devinez le mot entier: ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
-		// Vérifiez que la longueur est 1 et que le caractère est une lettre
-		if len(input) != 1 || !unicode.IsLetter(rune(input[0])) {
-			fmt.Println("Veuillez entrer une seule lettre valide.")
-		} else {
-			return rune(input[0])
+		// Si l'utilisateur entre une seule lettre, on vérifie que c'est une lettre valide
+		if len(input) == 1 && unicode.IsLetter(rune(input[0])) {
+			return input
 		}
+
+		// Si l'utilisateur entre un mot entier, on accepte aussi
+		if len(input) > 1 {
+			return input
+		}
+
+		fmt.Println("Veuillez entrer une lettre valide ou deviner le mot entier.")
 	}
 }
 
